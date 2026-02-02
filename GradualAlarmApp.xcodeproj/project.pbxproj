@@ -1,0 +1,334 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 56;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		1A1B2C3D4E5F600000000001 /* GradualAlarmApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A1B2C3D4E5F600000000010 /* GradualAlarmApp.swift */; };
+		1A1B2C3D4E5F600000000002 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A1B2C3D4E5F600000000011 /* AppDelegate.swift */; };
+		1A1B2C3D4E5F600000000003 /* AlarmConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A1B2C3D4E5F600000000012 /* AlarmConfig.swift */; };
+		1A1B2C3D4E5F600000000004 /* AlarmStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A1B2C3D4E5F600000000013 /* AlarmStore.swift */; };
+		1A1B2C3D4E5F600000000005 /* AlarmScheduler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A1B2C3D4E5F600000000014 /* AlarmScheduler.swift */; };
+		1A1B2C3D4E5F600000000006 /* AudioRampEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A1B2C3D4E5F600000000015 /* AudioRampEngine.swift */; };
+		1A1B2C3D4E5F60000000000F /* ToneGenerator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A1B2C3D4E5F60000000001E /* ToneGenerator.swift */; };
+		1A1B2C3D4E5F600000000007 /* HapticsEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A1B2C3D4E5F600000000016 /* HapticsEngine.swift */; };
+		1A1B2C3D4E5F600000000008 /* AlarmController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A1B2C3D4E5F600000000017 /* AlarmController.swift */; };
+		1A1B2C3D4E5F600000000009 /* OnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A1B2C3D4E5F600000000018 /* OnboardingView.swift */; };
+		1A1B2C3D4E5F60000000000A /* MainAlarmView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A1B2C3D4E5F600000000019 /* MainAlarmView.swift */; };
+		1A1B2C3D4E5F60000000000B /* SoundPickerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A1B2C3D4E5F60000000001A /* SoundPickerView.swift */; };
+		1A1B2C3D4E5F60000000000C /* RingingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A1B2C3D4E5F60000000001B /* RingingView.swift */; };
+		1A1B2C3D4E5F60000000000D /* Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 1A1B2C3D4E5F60000000001C /* Info.plist */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		1A1B2C3D4E5F600000000020 /* GradualAlarmApp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; path = GradualAlarmApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		1A1B2C3D4E5F600000000010 /* GradualAlarmApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GradualAlarmApp.swift; sourceTree = "<group>"; };
+		1A1B2C3D4E5F600000000011 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
+		1A1B2C3D4E5F600000000012 /* AlarmConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Models/AlarmConfig.swift; sourceTree = "<group>"; };
+		1A1B2C3D4E5F600000000013 /* AlarmStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Services/AlarmStore.swift; sourceTree = "<group>"; };
+		1A1B2C3D4E5F600000000014 /* AlarmScheduler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Services/AlarmScheduler.swift; sourceTree = "<group>"; };
+		1A1B2C3D4E5F600000000015 /* AudioRampEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Services/AudioRampEngine.swift; sourceTree = "<group>"; };
+		1A1B2C3D4E5F60000000001E /* ToneGenerator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Services/ToneGenerator.swift; sourceTree = "<group>"; };
+		1A1B2C3D4E5F600000000016 /* HapticsEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Services/HapticsEngine.swift; sourceTree = "<group>"; };
+		1A1B2C3D4E5F600000000017 /* AlarmController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = State/AlarmController.swift; sourceTree = "<group>"; };
+		1A1B2C3D4E5F600000000018 /* OnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Views/OnboardingView.swift; sourceTree = "<group>"; };
+		1A1B2C3D4E5F600000000019 /* MainAlarmView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Views/MainAlarmView.swift; sourceTree = "<group>"; };
+		1A1B2C3D4E5F60000000001A /* SoundPickerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Views/SoundPickerView.swift; sourceTree = "<group>"; };
+		1A1B2C3D4E5F60000000001B /* RingingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Views/RingingView.swift; sourceTree = "<group>"; };
+		1A1B2C3D4E5F60000000001C /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		1A1B2C3D4E5F600000000100 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		1A1B2C3D4E5F600000000200 /* GradualAlarmApp */ = {
+			isa = PBXGroup;
+			children = (
+				1A1B2C3D4E5F600000000010 /* GradualAlarmApp.swift */,
+				1A1B2C3D4E5F600000000011 /* AppDelegate.swift */,
+				1A1B2C3D4E5F600000000012 /* AlarmConfig.swift */,
+				1A1B2C3D4E5F600000000013 /* AlarmStore.swift */,
+				1A1B2C3D4E5F600000000014 /* AlarmScheduler.swift */,
+				1A1B2C3D4E5F600000000015 /* AudioRampEngine.swift */,
+				1A1B2C3D4E5F60000000001E /* ToneGenerator.swift */,
+				1A1B2C3D4E5F600000000016 /* HapticsEngine.swift */,
+				1A1B2C3D4E5F600000000017 /* AlarmController.swift */,
+				1A1B2C3D4E5F600000000018 /* OnboardingView.swift */,
+				1A1B2C3D4E5F600000000019 /* MainAlarmView.swift */,
+				1A1B2C3D4E5F60000000001A /* SoundPickerView.swift */,
+				1A1B2C3D4E5F60000000001B /* RingingView.swift */,
+				1A1B2C3D4E5F60000000001C /* Info.plist */,
+			);
+			path = GradualAlarmApp;
+			sourceTree = "<group>";
+		};
+		1A1B2C3D4E5F600000000201 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				1A1B2C3D4E5F600000000020 /* GradualAlarmApp.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		1A1B2C3D4E5F600000000202 /* Root */ = {
+			isa = PBXGroup;
+			children = (
+				1A1B2C3D4E5F600000000200 /* GradualAlarmApp */,
+				1A1B2C3D4E5F600000000201 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		1A1B2C3D4E5F600000000300 /* GradualAlarmApp */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 1A1B2C3D4E5F600000000400 /* Build configuration list for PBXNativeTarget "GradualAlarmApp" */;
+			buildPhases = (
+				1A1B2C3D4E5F600000000500 /* Sources */,
+				1A1B2C3D4E5F600000000501 /* Frameworks */,
+				1A1B2C3D4E5F600000000502 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = GradualAlarmApp;
+			productName = GradualAlarmApp;
+			productReference = 1A1B2C3D4E5F600000000020 /* GradualAlarmApp.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		1A1B2C3D4E5F600000000350 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				LastUpgradeCheck = 1500;
+				ORGANIZATIONNAME = "Gradual Alarm";
+				TargetAttributes = {
+					1A1B2C3D4E5F600000000300 = {
+						CreatedOnToolsVersion = 15.0;
+					};
+				};
+			};
+			buildConfigurationList = 1A1B2C3D4E5F600000000401 /* Build configuration list for PBXProject "GradualAlarmApp" */;
+			compatibilityVersion = "Xcode 15.0";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+			);
+			mainGroup = 1A1B2C3D4E5F600000000202 /* Root */;
+			productRefGroup = 1A1B2C3D4E5F600000000201 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				1A1B2C3D4E5F600000000300 /* GradualAlarmApp */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		1A1B2C3D4E5F600000000502 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				1A1B2C3D4E5F60000000000D /* Info.plist in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		1A1B2C3D4E5F600000000500 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				1A1B2C3D4E5F600000000001 /* GradualAlarmApp.swift in Sources */,
+				1A1B2C3D4E5F600000000002 /* AppDelegate.swift in Sources */,
+				1A1B2C3D4E5F600000000003 /* AlarmConfig.swift in Sources */,
+				1A1B2C3D4E5F600000000004 /* AlarmStore.swift in Sources */,
+				1A1B2C3D4E5F600000000005 /* AlarmScheduler.swift in Sources */,
+				1A1B2C3D4E5F600000000006 /* AudioRampEngine.swift in Sources */,
+				1A1B2C3D4E5F60000000000F /* ToneGenerator.swift in Sources */,
+				1A1B2C3D4E5F600000000007 /* HapticsEngine.swift in Sources */,
+				1A1B2C3D4E5F600000000008 /* AlarmController.swift in Sources */,
+				1A1B2C3D4E5F600000000009 /* OnboardingView.swift in Sources */,
+				1A1B2C3D4E5F60000000000A /* MainAlarmView.swift in Sources */,
+				1A1B2C3D4E5F60000000000B /* SoundPickerView.swift in Sources */,
+				1A1B2C3D4E5F60000000000C /* RingingView.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		1A1B2C3D4E5F600000000600 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = "";
+				INFOPLIST_FILE = GradualAlarmApp/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
+				PRODUCT_BUNDLE_IDENTIFIER = com.example.GradualAlarmApp;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		1A1B2C3D4E5F600000000601 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = "";
+				INFOPLIST_FILE = GradualAlarmApp/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
+				PRODUCT_BUNDLE_IDENTIFIER = com.example.GradualAlarmApp;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		1A1B2C3D4E5F600000000602 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+			};
+			name = Debug;
+		};
+		1A1B2C3D4E5F600000000603 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = YES;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_OPTIMIZATION_LEVEL = "-Owholemodule";
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		1A1B2C3D4E5F600000000400 /* Build configuration list for PBXNativeTarget "GradualAlarmApp" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				1A1B2C3D4E5F600000000600 /* Debug */,
+				1A1B2C3D4E5F600000000601 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		1A1B2C3D4E5F600000000401 /* Build configuration list for PBXProject "GradualAlarmApp" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				1A1B2C3D4E5F600000000602 /* Debug */,
+				1A1B2C3D4E5F600000000603 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 1A1B2C3D4E5F600000000350 /* Project object */;
+}
