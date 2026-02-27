@@ -21,6 +21,8 @@
 		1A1B2C3D4E5F60000000000B /* SoundPickerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A1B2C3D4E5F60000000001A /* SoundPickerView.swift */; };
 		1A1B2C3D4E5F60000000000C /* RingingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A1B2C3D4E5F60000000001B /* RingingView.swift */; };
 		1A1B2C3D4E5F60000000000D /* Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 1A1B2C3D4E5F60000000001C /* Info.plist */; };
+		1A1B2C3D4E5F600000000032 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 1A1B2C3D4E5F600000000030 /* Assets.xcassets */; };
+		1A1B2C3D4E5F600000000033 /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 1A1B2C3D4E5F600000000031 /* LaunchScreen.storyboard */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -39,6 +41,8 @@
 		1A1B2C3D4E5F60000000001A /* SoundPickerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Views/SoundPickerView.swift; sourceTree = "<group>"; };
 		1A1B2C3D4E5F60000000001B /* RingingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Views/RingingView.swift; sourceTree = "<group>"; };
 		1A1B2C3D4E5F60000000001C /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		1A1B2C3D4E5F600000000030 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		1A1B2C3D4E5F600000000031 /* LaunchScreen.storyboard */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = LaunchScreen.storyboard; path = Base.lproj/LaunchScreen.storyboard; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -69,6 +73,8 @@
 				1A1B2C3D4E5F60000000001A /* SoundPickerView.swift */,
 				1A1B2C3D4E5F60000000001B /* RingingView.swift */,
 				1A1B2C3D4E5F60000000001C /* Info.plist */,
+				1A1B2C3D4E5F600000000030 /* Assets.xcassets */,
+				1A1B2C3D4E5F600000000031 /* LaunchScreen.storyboard */,
 			);
 			path = GradualAlarmApp;
 			sourceTree = "<group>";
@@ -146,6 +152,8 @@
 			buildActionMask = 2147483647;
 			files = (
 				1A1B2C3D4E5F60000000000D /* Info.plist in Resources */,
+				1A1B2C3D4E5F600000000032 /* Assets.xcassets in Resources */,
+				1A1B2C3D4E5F600000000033 /* LaunchScreen.storyboard in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -179,13 +187,14 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = "";
 				INFOPLIST_FILE = GradualAlarmApp/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
-				PRODUCT_BUNDLE_IDENTIFIER = com.example.GradualAlarmApp;
+				PRODUCT_BUNDLE_IDENTIFIER = com.gradualalarm.app;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
@@ -196,13 +205,14 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = "";
 				INFOPLIST_FILE = GradualAlarmApp/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
-				PRODUCT_BUNDLE_IDENTIFIER = com.example.GradualAlarmApp;
+				PRODUCT_BUNDLE_IDENTIFIER = com.gradualalarm.app;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
