@@ -15,18 +15,18 @@ final class NotificationManager: NSObject, UNUserNotificationCenterDelegate {
         }
     }
 
-    func prepareFallbackNotification(for alarm: Alarm) {
+    func prepareFallbackNotification(for alarm: Alarm, fireDate: Date? = nil) {
         checkPermissionStatus { [weak self] status in
             guard let self else { return }
 
             switch status {
             case .authorized, .provisional, .ephemeral:
-                self.scheduleAlarmNotification(for: alarm)
+                self.scheduleAlarmNotification(for: alarm, fireDate: fireDate)
             case .notDetermined:
                 UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound, .badge]) { granted, _ in
                     guard granted else { return }
                     DispatchQueue.main.async {
-                        self.scheduleAlarmNotification(for: alarm)
+                        self.scheduleAlarmNotification(for: alarm, fireDate: fireDate)
                     }
                 }
             case .denied:

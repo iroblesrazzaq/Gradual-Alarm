@@ -16,17 +16,20 @@ final class AlarmStore: ObservableObject {
     }
 
     func activate() {
+        let fireDate = AudioRampPlayer.shared.currentFireDate ?? alarm.nextFireDate
+
         if AudioRampPlayer.shared.isArmed {
             NotificationManager.shared.scheduleAlarmNotificationIfAuthorized(
                 for: alarm,
-                fireDate: AudioRampPlayer.shared.currentFireDate
+                fireDate: fireDate
             )
+            BackupAlarmManager.shared.scheduleBackupIfAuthorized(after: fireDate)
             syncFromAudioState()
             return
         }
 
-        reschedule()
-        NotificationManager.shared.prepareFallbackNotification(for: alarm)
+        AlarmOccurrenceScheduler.reschedule(using: alarm, after: Date())
+        syncFromAudioState()
     }
 
     func updateTime(hour: Int, minute: Int) {
@@ -45,8 +48,8 @@ final class AlarmStore: ObservableObject {
     func stopAlarm() {
         isAlarmFiring = false
         let currentFireDate = AudioRampPlayer.shared.currentFireDate ?? alarm.nextFireDate
-        stopAudio(userInitiated: true)
-        reschedule(after: currentFireDate)
+        AlarmOccurrenceScheduler.skipCurrentOccurrence(using: alarm, currentFireDate: currentFireDate, recordStop: true)
+        syncFromAudioState()
     }
 
     func scheduleAudio() {
@@ -81,11 +84,8 @@ final class AlarmStore: ObservableObject {
     // MARK: - Private
 
     private func reschedule(after referenceDate: Date = Date()) {
-        let nextFireDate = alarm.fireDate(after: referenceDate)
-        NotificationManager.shared.cancelAlarmNotification()
-        stopAudio()
-        scheduleAudio(for: nextFireDate)
-        NotificationManager.shared.scheduleAlarmNotificationIfAuthorized(for: alarm, fireDate: nextFireDate)
+        AlarmOccurrenceScheduler.reschedule(using: alarm, after: referenceDate)
+        syncFromAudioState()
     }
 
     private func scheduleAudio(for fireDate: Date) {
