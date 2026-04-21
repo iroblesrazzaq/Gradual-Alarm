@@ -1,17 +1,13 @@
-//
-//  Gradual_AlarmApp.swift
-//  Gradual-Alarm
-//
-//  Created by Ismael Robles-Razzaq on 4/21/26.
-//
-
 import SwiftUI
 
 @main
 struct Gradual_AlarmApp: App {
+    @StateObject private var store = AlarmStore()
+
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            MainView()
+                .environmentObject(store)
         }
     }
 }
