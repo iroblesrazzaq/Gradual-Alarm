@@ -10,26 +10,29 @@ struct Alarm: Codable {
 
     // Next calendar occurrence of the alarm time (today if not yet passed, tomorrow if it has)
     var nextFireDate: Date {
+        fireDate(after: Date())
+    }
+
+    func fireDate(after referenceDate: Date) -> Date {
         let cal = Calendar.current
-        var components = cal.dateComponents([.year, .month, .day], from: Date())
+        var components = cal.dateComponents([.year, .month, .day], from: referenceDate)
         components.hour = timeHour
         components.minute = timeMinute
         components.second = 0
         let candidate = cal.date(from: components)!
-        if candidate > Date() {
+        if candidate > referenceDate {
             return candidate
         }
         return cal.date(byAdding: .day, value: 1, to: candidate)!
     }
 
-    // When to begin playing the silent loop: ramp duration + 5-min buffer before alarm time
-    var silentLoopStartDate: Date {
-        nextFireDate.addingTimeInterval(-Double(rampMinutes * 60) - 5 * 60)
-    }
-
     // When to begin the audible volume ramp
     var rampStartDate: Date {
         nextFireDate.addingTimeInterval(-Double(rampMinutes * 60))
+    }
+
+    func rampStartDate(for fireDate: Date) -> Date {
+        fireDate.addingTimeInterval(-Double(rampMinutes * 60))
     }
 }
 

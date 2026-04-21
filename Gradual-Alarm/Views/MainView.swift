@@ -4,6 +4,7 @@ struct MainView: View {
     @EnvironmentObject var store: AlarmStore
     @State private var showTimePicker = false
     @State private var showRampPicker = false
+    @State private var showDiagnostics = false
 
     private var timeString: String {
         let h = store.alarm.timeHour
@@ -56,6 +57,21 @@ struct MainView: View {
                     } footer: {
                         Text("Volume ramp begins at \(rampStartString). Make sure media volume is turned up before bed.")
                     }
+
+                    Section("Diagnostics") {
+                        DisclosureGroup("Recent alarm events", isExpanded: $showDiagnostics) {
+                            ForEach(diagnosticRows, id: \.label) { row in
+                                HStack {
+                                    Text(row.label)
+                                        .foregroundStyle(.primary)
+                                    Spacer()
+                                    Text(row.value)
+                                        .foregroundStyle(.secondary)
+                                        .multilineTextAlignment(.trailing)
+                                }
+                            }
+                        }
+                    }
                 }
             }
             .navigationTitle("Gradual Alarm")
@@ -87,6 +103,30 @@ struct MainView: View {
         let date = store.alarm.rampStartDate
         let formatter = DateFormatter()
         formatter.timeStyle = .short
+        return formatter.string(from: date)
+    }
+
+    private var diagnosticRows: [(label: String, value: String)] {
+        let diagnostics = store.diagnostics
+        return [
+            ("Last armed", format(diagnostics.lastArmedAt)),
+            ("Last fire date", format(diagnostics.lastFireDate)),
+            ("Ramp started", format(diagnostics.lastRampStartedAt)),
+            ("Last stop", format(diagnostics.lastStopAt)),
+            ("Interruption began", format(diagnostics.lastInterruptionBeganAt)),
+            ("Interruption ended", format(diagnostics.lastInterruptionEndedAt)),
+            ("Route change", format(diagnostics.lastRouteChangeAt)),
+            ("Media reset", format(diagnostics.lastMediaServicesResetAt)),
+            ("Recovery attempt", format(diagnostics.lastRecoveryAttemptAt)),
+            ("Recovery outcome", diagnostics.lastRecoveryOutcome ?? "Never")
+        ]
+    }
+
+    private func format(_ date: Date?) -> String {
+        guard let date else { return "Never" }
+        let formatter = DateFormatter()
+        formatter.dateStyle = .short
+        formatter.timeStyle = .medium
         return formatter.string(from: date)
     }
 }

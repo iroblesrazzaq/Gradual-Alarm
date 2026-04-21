@@ -1,20 +1,32 @@
 import Foundation
 import Combine
+import SwiftUI
 
+@MainActor
 final class AlarmStore: ObservableObject {
     @Published var alarm: Alarm
     @Published var isAlarmFiring = false
     @Published var volumeWarningVisible = false
+    @Published var diagnostics = AlarmDiagnosticsStore.load()
 
     init() {
         self.alarm = Alarm.load()
+        wireAudioCallbacks()
+        syncFromAudioState()
     }
 
     func activate() {
-        NotificationManager.shared.requestPermission { [weak self] granted in
-            guard let self, granted else { return }
-            self.reschedule()
+        if AudioRampPlayer.shared.isArmed {
+            NotificationManager.shared.scheduleAlarmNotificationIfAuthorized(
+                for: alarm,
+                fireDate: AudioRampPlayer.shared.currentFireDate
+            )
+            syncFromAudioState()
+            return
         }
+
+        reschedule()
+        NotificationManager.shared.prepareFallbackNotification(for: alarm)
     }
 
     func updateTime(hour: Int, minute: Int) {
@@ -32,26 +44,58 @@ final class AlarmStore: ObservableObject {
 
     func stopAlarm() {
         isAlarmFiring = false
-        stopAudio()
-        reschedule()
+        let currentFireDate = AudioRampPlayer.shared.currentFireDate ?? alarm.nextFireDate
+        stopAudio(userInitiated: true)
+        reschedule(after: currentFireDate)
     }
-
-    // MARK: - Audio stubs (wired in M2)
 
     func scheduleAudio() {
-        // M2: AudioRampPlayer.shared.scheduleRamp(for: alarm)
+        scheduleAudio(for: alarm.nextFireDate)
     }
 
-    func stopAudio() {
-        // M2: AudioRampPlayer.shared.stopAll()
+    func stopAudio(userInitiated: Bool = false) {
+        AudioRampPlayer.shared.stop(recordStopAt: userInitiated)
+        syncFromAudioState()
+    }
+
+    func handleScenePhase(_ scenePhase: ScenePhase) {
+        switch scenePhase {
+        case .active, .inactive, .background:
+            syncFromAudioState()
+        @unknown default:
+            syncFromAudioState()
+        }
+    }
+
+    func syncFromAudioState() {
+        isAlarmFiring = AudioRampPlayer.shared.currentPhase == .ramping
+        diagnostics = AudioRampPlayer.shared.diagnostics
+        if AudioRampPlayer.shared.isArmed {
+            NotificationManager.shared.scheduleAlarmNotificationIfAuthorized(
+                for: alarm,
+                fireDate: AudioRampPlayer.shared.currentFireDate
+            )
+        }
     }
 
     // MARK: - Private
 
-    private func reschedule() {
+    private func reschedule(after referenceDate: Date = Date()) {
+        let nextFireDate = alarm.fireDate(after: referenceDate)
         NotificationManager.shared.cancelAlarmNotification()
-        NotificationManager.shared.scheduleAlarmNotification(for: alarm)
         stopAudio()
-        scheduleAudio()
+        scheduleAudio(for: nextFireDate)
+        NotificationManager.shared.scheduleAlarmNotificationIfAuthorized(for: alarm, fireDate: nextFireDate)
+    }
+
+    private func scheduleAudio(for fireDate: Date) {
+        AudioRampPlayer.shared.arm(for: alarm, fireDate: fireDate)
+        syncFromAudioState()
+    }
+
+    private func wireAudioCallbacks() {
+        AudioRampPlayer.shared.onStateChanged = { [weak self] in
+            self?.syncFromAudioState()
+        }
     }
 }
