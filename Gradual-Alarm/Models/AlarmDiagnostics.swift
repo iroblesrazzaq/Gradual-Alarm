@@ -5,6 +5,8 @@ struct AlarmDiagnostics: Codable {
     var lastFireDate: Date?
     var lastRampStartedAt: Date?
     var lastStopAt: Date?
+    var lastSnoozeAt: Date?
+    var lastSnoozeFireDate: Date?
     var lastBackupScheduledAt: Date?
     var lastBackupFireDate: Date?
     var lastBackupCancelledAt: Date?

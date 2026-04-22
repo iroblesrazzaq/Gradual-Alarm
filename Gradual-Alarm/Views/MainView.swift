@@ -113,6 +113,8 @@ struct MainView: View {
             ("Last fire date", format(diagnostics.lastFireDate)),
             ("Ramp started", format(diagnostics.lastRampStartedAt)),
             ("Last stop", format(diagnostics.lastStopAt)),
+            ("Last snooze", format(diagnostics.lastSnoozeAt)),
+            ("Snoozed fire date", format(diagnostics.lastSnoozeFireDate)),
             ("Backup scheduled", format(diagnostics.lastBackupScheduledAt)),
             ("Backup fire date", format(diagnostics.lastBackupFireDate)),
             ("Backup cancelled", format(diagnostics.lastBackupCancelledAt)),
