@@ -29,6 +29,18 @@ struct MainView: View {
                     .foregroundStyle(.black)
                 }
 
+                if store.systemAlarmWarningVisible {
+                    HStack(alignment: .top, spacing: 8) {
+                        Image(systemName: "exclamationmark.triangle.fill")
+                        Text("Gradual audio was interrupted. The system alarm is still scheduled for the target time.")
+                            .font(.footnote)
+                    }
+                    .padding(10)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(Color.orange.opacity(0.9))
+                    .foregroundStyle(.black)
+                }
+
                 List {
                     Section {
                         Button {
@@ -55,7 +67,7 @@ struct MainView: View {
                             }
                         }
                     } footer: {
-                        Text("Volume ramp begins at \(rampStartString). Make sure media volume is turned up before bed.")
+                        Text("Volume ramp begins at \(rampStartString). A system alarm also fires at the target time if gradual audio gets interrupted. Make sure media volume is turned up before bed, and avoid starting other audio apps after arming.")
                     }
 
                     Section("Diagnostics") {
@@ -115,10 +127,11 @@ struct MainView: View {
             ("Last stop", format(diagnostics.lastStopAt)),
             ("Last snooze", format(diagnostics.lastSnoozeAt)),
             ("Snoozed fire date", format(diagnostics.lastSnoozeFireDate)),
-            ("Backup scheduled", format(diagnostics.lastBackupScheduledAt)),
-            ("Backup fire date", format(diagnostics.lastBackupFireDate)),
-            ("Backup cancelled", format(diagnostics.lastBackupCancelledAt)),
-            ("Backup outcome", diagnostics.lastBackupScheduleOutcome ?? "Never"),
+            ("System alarm scheduled", format(diagnostics.lastBackupScheduledAt)),
+            ("System alarm fire date", format(diagnostics.lastBackupFireDate)),
+            ("System alarm cancelled", format(diagnostics.lastBackupCancelledAt)),
+            ("System alarm outcome", diagnostics.lastBackupScheduleOutcome ?? "Never"),
+            ("Audio lost", format(diagnostics.lastAudioLossAt)),
             ("Interruption began", format(diagnostics.lastInterruptionBeganAt)),
             ("Interruption ended", format(diagnostics.lastInterruptionEndedAt)),
             ("Route change", format(diagnostics.lastRouteChangeAt)),

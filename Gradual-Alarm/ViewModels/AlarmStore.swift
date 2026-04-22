@@ -7,6 +7,7 @@ final class AlarmStore: ObservableObject {
     @Published var alarm: Alarm
     @Published var isAlarmFiring = false
     @Published var volumeWarningVisible = false
+    @Published var systemAlarmWarningVisible = false
     @Published var diagnostics = AlarmDiagnosticsStore.load()
 
     init() {
@@ -82,8 +83,10 @@ final class AlarmStore: ObservableObject {
     func handleScenePhase(_ scenePhase: ScenePhase) {
         switch scenePhase {
         case .active, .inactive, .background:
+            AudioRampPlayer.shared.syncForCurrentTime()
             syncFromAudioState()
         @unknown default:
+            AudioRampPlayer.shared.syncForCurrentTime()
             syncFromAudioState()
         }
     }
@@ -91,6 +94,7 @@ final class AlarmStore: ObservableObject {
     func syncFromAudioState() {
         isAlarmFiring = AudioRampPlayer.shared.currentPhase == .ramping
         diagnostics = AudioRampPlayer.shared.diagnostics
+        systemAlarmWarningVisible = shouldShowSystemAlarmWarning(from: diagnostics)
         if AudioRampPlayer.shared.isArmed {
             NotificationManager.shared.scheduleAlarmNotificationIfAuthorized(
                 for: alarm,
@@ -115,5 +119,20 @@ final class AlarmStore: ObservableObject {
         AudioRampPlayer.shared.onStateChanged = { [weak self] in
             self?.syncFromAudioState()
         }
+    }
+
+    private func shouldShowSystemAlarmWarning(from diagnostics: AlarmDiagnostics) -> Bool {
+        guard let outcome = diagnostics.lastRecoveryOutcome else { return false }
+
+        let degradedOutcomes: Set<String> = [
+            "resume_failed",
+            "resume_failed_without_shouldResume",
+            "scene_phase_catchup_failed",
+            "route_change_recovery_failed",
+            "arm_failed",
+            "resume_failed_without_shouldResume_play_failed"
+        ]
+
+        return degradedOutcomes.contains(outcome)
     }
 }

@@ -37,7 +37,7 @@ private enum BackupAlarmStateStore {
 @MainActor
 final class BackupAlarmManager {
     static let shared = BackupAlarmManager()
-    static let backupDelay: TimeInterval = 120
+    static let systemAlarmOffset: TimeInterval = 0
 
     private let alarmManager = AlarmManager.shared
     private var scheduleTask: Task<Void, Never>?
@@ -102,7 +102,7 @@ final class BackupAlarmManager {
     }
 
     private func schedule(primaryFireDate: Date, rampMinutesOverride: Int?, requestAuthorizationIfNeeded: Bool) {
-        let backupFireDate = primaryFireDate.addingTimeInterval(Self.backupDelay)
+        let backupFireDate = primaryFireDate.addingTimeInterval(Self.systemAlarmOffset)
 
         if let state = BackupAlarmStateStore.load(),
            state.backupFireDate == backupFireDate,
@@ -203,7 +203,7 @@ final class BackupAlarmManager {
     private func makeAttributes() -> AlarmAttributes<BackupAlarmMetadata> {
         let presentation = AlarmPresentation(
             alert: AlarmPresentation.Alert(
-                title: "Backup alarm",
+                title: "Wake up",
                 secondaryButton: AlarmButton(
                     text: "Snooze",
                     textColor: .blue,

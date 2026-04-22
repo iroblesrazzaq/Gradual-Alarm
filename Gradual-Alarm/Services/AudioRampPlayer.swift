@@ -90,7 +90,7 @@ final class AudioRampPlayer: NSObject {
         }
 
         if isInterrupted {
-            notifyStateChanged()
+            recoverPlaybackForCurrentTime(outcomeOnSuccess: "scene_phase_catchup_success", outcomeOnFailure: "scene_phase_catchup_failed")
             return
         }
 
@@ -104,28 +104,7 @@ final class AudioRampPlayer: NSObject {
             return
         }
 
-        _ = AlarmDiagnosticsStore.update { diagnostics in
-            diagnostics.lastRecoveryAttemptAt = Date()
-        }
-
-        do {
-            try configureSessionForPlayback()
-
-            if let player, !player.isPlaying {
-                guard player.play() else {
-                    recordRecoveryOutcome("resume_play_failed")
-                    return
-                }
-            }
-
-            isInterrupted = false
-            beginRampIfNeeded()
-            updateRampVolume()
-            recordRecoveryOutcome("resume_success")
-        } catch {
-            print("AudioRampPlayer: failed to resume after interruption: \(error.localizedDescription)")
-            recordRecoveryOutcome("resume_failed")
-        }
+        recoverPlaybackForCurrentTime(outcomeOnSuccess: "resume_success", outcomeOnFailure: "resume_failed")
     }
 
     func rebuildAfterMediaServicesReset() {
@@ -321,6 +300,7 @@ final class AudioRampPlayer: NSObject {
             rampTimer = nil
             _ = AlarmDiagnosticsStore.update { diagnostics in
                 diagnostics.lastInterruptionBeganAt = Date()
+                diagnostics.lastAudioLossAt = Date()
             }
             notifyStateChanged()
 
@@ -334,7 +314,10 @@ final class AudioRampPlayer: NSObject {
             if options.contains(.shouldResume) {
                 resumeAfterInterruptionIfNeeded()
             } else {
-                recordRecoveryOutcome("interruption_ended_no_resume")
+                recoverPlaybackForCurrentTime(
+                    outcomeOnSuccess: "resume_success_without_shouldResume",
+                    outcomeOnFailure: "resume_failed_without_shouldResume"
+                )
             }
 
         @unknown default:
@@ -347,16 +330,19 @@ final class AudioRampPlayer: NSObject {
             diagnostics.lastRouteChangeAt = Date()
         }
 
-        guard isArmed, !isInterrupted else {
+        guard isArmed else {
             notifyStateChanged()
             return
         }
 
-        if player?.isPlaying == false {
+        if isInterrupted || player?.isPlaying == false {
             _ = AlarmDiagnosticsStore.update { diagnostics in
                 diagnostics.lastRecoveryAttemptAt = Date()
             }
-            resumeAfterInterruptionIfNeeded()
+            recoverPlaybackForCurrentTime(
+                outcomeOnSuccess: "route_change_recovery_success",
+                outcomeOnFailure: "route_change_recovery_failed"
+            )
         } else {
             notifyStateChanged()
         }
@@ -364,5 +350,35 @@ final class AudioRampPlayer: NSObject {
 
     @objc private func handleMediaServicesReset() {
         rebuildAfterMediaServicesReset()
+    }
+
+    private func recoverPlaybackForCurrentTime(outcomeOnSuccess: String, outcomeOnFailure: String) {
+        guard isArmed else {
+            recordRecoveryOutcome("resume_skipped_not_armed")
+            return
+        }
+
+        _ = AlarmDiagnosticsStore.update { diagnostics in
+            diagnostics.lastRecoveryAttemptAt = Date()
+        }
+
+        do {
+            try configureSessionForPlayback()
+
+            if let player, !player.isPlaying {
+                guard player.play() else {
+                    recordRecoveryOutcome("\(outcomeOnFailure)_play_failed")
+                    return
+                }
+            }
+
+            isInterrupted = false
+            beginRampIfNeeded()
+            updateRampVolume()
+            recordRecoveryOutcome(outcomeOnSuccess)
+        } catch {
+            print("AudioRampPlayer: failed to recover playback: \(error.localizedDescription)")
+            recordRecoveryOutcome(outcomeOnFailure)
+        }
     }
 }
