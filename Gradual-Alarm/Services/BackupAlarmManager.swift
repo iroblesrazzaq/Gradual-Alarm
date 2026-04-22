@@ -8,7 +8,9 @@ private struct BackupAlarmMetadata: AlarmMetadata {}
 
 private struct BackupAlarmState: Codable {
     var alarmID: UUID
+    var primaryFireDate: Date
     var backupFireDate: Date
+    var rampMinutesOverride: Int?
 }
 
 private enum BackupAlarmStateStore {
@@ -42,13 +44,15 @@ final class BackupAlarmManager {
 
     var trackedBackupID: UUID? { BackupAlarmStateStore.load()?.alarmID }
     var trackedBackupFireDate: Date? { BackupAlarmStateStore.load()?.backupFireDate }
+    var trackedPrimaryFireDate: Date? { BackupAlarmStateStore.load()?.primaryFireDate }
+    var trackedRampMinutesOverride: Int? { BackupAlarmStateStore.load()?.rampMinutesOverride }
 
-    func prepareBackupAlarm(after primaryFireDate: Date) {
-        schedule(primaryFireDate: primaryFireDate, requestAuthorizationIfNeeded: true)
+    func prepareBackupAlarm(after primaryFireDate: Date, rampMinutesOverride: Int? = nil) {
+        schedule(primaryFireDate: primaryFireDate, rampMinutesOverride: rampMinutesOverride, requestAuthorizationIfNeeded: true)
     }
 
-    func scheduleBackupIfAuthorized(after primaryFireDate: Date) {
-        schedule(primaryFireDate: primaryFireDate, requestAuthorizationIfNeeded: false)
+    func scheduleBackupIfAuthorized(after primaryFireDate: Date, rampMinutesOverride: Int? = nil) {
+        schedule(primaryFireDate: primaryFireDate, rampMinutesOverride: rampMinutesOverride, requestAuthorizationIfNeeded: false)
     }
 
     func cancelBackup() {
@@ -76,7 +80,7 @@ final class BackupAlarmManager {
             return nil
         }
 
-        return state.backupFireDate.addingTimeInterval(-Self.backupDelay)
+        return state.primaryFireDate
     }
 
     func handleStopIntent(for alarmIDString: String) async {
@@ -85,21 +89,40 @@ final class BackupAlarmManager {
         AlarmOccurrenceScheduler.skipCurrentOccurrence(using: alarm, currentFireDate: primaryFireDate, recordStop: true)
     }
 
-    private func schedule(primaryFireDate: Date, requestAuthorizationIfNeeded: Bool) {
+    func handleSnoozeIntent(for alarmIDString: String) async {
+        if let alarmID = UUID(uuidString: alarmIDString) {
+            do {
+                try alarmManager.stop(id: alarmID)
+            } catch {
+                print("BackupAlarmManager: failed to stop backup alarm before snooze: \(error.localizedDescription)")
+            }
+        }
+
+        AlarmOccurrenceScheduler.snoozeCurrentOccurrence(using: Alarm.load())
+    }
+
+    private func schedule(primaryFireDate: Date, rampMinutesOverride: Int?, requestAuthorizationIfNeeded: Bool) {
         let backupFireDate = primaryFireDate.addingTimeInterval(Self.backupDelay)
 
-        if let state = BackupAlarmStateStore.load(), state.backupFireDate == backupFireDate {
+        if let state = BackupAlarmStateStore.load(),
+           state.backupFireDate == backupFireDate,
+           state.rampMinutesOverride == rampMinutesOverride {
             recordScheduleOutcome("already_scheduled")
             return
         }
 
         scheduleTask?.cancel()
         scheduleTask = Task { [weak self] in
-            await self?.performSchedule(primaryFireDate: primaryFireDate, backupFireDate: backupFireDate, requestAuthorizationIfNeeded: requestAuthorizationIfNeeded)
+            await self?.performSchedule(
+                primaryFireDate: primaryFireDate,
+                backupFireDate: backupFireDate,
+                rampMinutesOverride: rampMinutesOverride,
+                requestAuthorizationIfNeeded: requestAuthorizationIfNeeded
+            )
         }
     }
 
-    private func performSchedule(primaryFireDate: Date, backupFireDate: Date, requestAuthorizationIfNeeded: Bool) async {
+    private func performSchedule(primaryFireDate: Date, backupFireDate: Date, rampMinutesOverride: Int?, requestAuthorizationIfNeeded: Bool) async {
         guard backupFireDate > Date() else {
             recordScheduleOutcome("backup_fire_date_in_past")
             return
@@ -135,6 +158,7 @@ final class BackupAlarmManager {
             schedule: .fixed(backupFireDate),
             attributes: makeAttributes(),
             stopIntent: StopBackupAlarmIntent(alarmID: alarmID.uuidString),
+            secondaryIntent: SnoozeBackupAlarmIntent(alarmID: alarmID.uuidString),
             sound: .default
         )
 
@@ -142,7 +166,14 @@ final class BackupAlarmManager {
             _ = try await alarmManager.schedule(id: alarmID, configuration: configuration)
             guard !Task.isCancelled else { return }
 
-            BackupAlarmStateStore.save(BackupAlarmState(alarmID: alarmID, backupFireDate: backupFireDate))
+            BackupAlarmStateStore.save(
+                BackupAlarmState(
+                    alarmID: alarmID,
+                    primaryFireDate: primaryFireDate,
+                    backupFireDate: backupFireDate,
+                    rampMinutesOverride: rampMinutesOverride
+                )
+            )
             _ = AlarmDiagnosticsStore.update { diagnostics in
                 diagnostics.lastBackupScheduledAt = Date()
                 diagnostics.lastBackupFireDate = backupFireDate
@@ -171,7 +202,15 @@ final class BackupAlarmManager {
 
     private func makeAttributes() -> AlarmAttributes<BackupAlarmMetadata> {
         let presentation = AlarmPresentation(
-            alert: AlarmPresentation.Alert(title: "Backup alarm")
+            alert: AlarmPresentation.Alert(
+                title: "Backup alarm",
+                secondaryButton: AlarmButton(
+                    text: "Snooze",
+                    textColor: .blue,
+                    systemImageName: "zzz"
+                ),
+                secondaryButtonBehavior: .custom
+            )
         )
 
         return AlarmAttributes(

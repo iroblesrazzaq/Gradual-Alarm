@@ -23,12 +23,24 @@ final class AlarmStore: ObservableObject {
                 for: alarm,
                 fireDate: fireDate
             )
-            BackupAlarmManager.shared.scheduleBackupIfAuthorized(after: fireDate)
+            BackupAlarmManager.shared.scheduleBackupIfAuthorized(
+                after: fireDate,
+                rampMinutesOverride: BackupAlarmManager.shared.trackedRampMinutesOverride
+            )
             syncFromAudioState()
             return
         }
 
-        AlarmOccurrenceScheduler.reschedule(using: alarm, after: Date())
+        if let recoveredFireDate = BackupAlarmManager.shared.trackedPrimaryFireDate,
+           recoveredFireDate > Date() {
+            AlarmOccurrenceScheduler.activateOccurrence(
+                for: alarm,
+                fireDate: recoveredFireDate,
+                rampMinutesOverride: BackupAlarmManager.shared.trackedRampMinutesOverride
+            )
+        } else {
+            AlarmOccurrenceScheduler.reschedule(using: alarm, after: Date())
+        }
         syncFromAudioState()
     }
 
@@ -49,6 +61,12 @@ final class AlarmStore: ObservableObject {
         isAlarmFiring = false
         let currentFireDate = AudioRampPlayer.shared.currentFireDate ?? alarm.nextFireDate
         AlarmOccurrenceScheduler.skipCurrentOccurrence(using: alarm, currentFireDate: currentFireDate, recordStop: true)
+        syncFromAudioState()
+    }
+
+    func snoozeAlarm() {
+        isAlarmFiring = false
+        AlarmOccurrenceScheduler.snoozeCurrentOccurrence(using: alarm)
         syncFromAudioState()
     }
 
