@@ -11,6 +11,8 @@ private struct BackupAlarmState: Codable {
     var primaryFireDate: Date
     var backupFireDate: Date
     var rampMinutesOverride: Int?
+    var nudgeAlarmID: UUID?
+    var nudgeFireDate: Date?
 }
 
 private enum BackupAlarmStateStore {
@@ -47,12 +49,12 @@ final class BackupAlarmManager {
     var trackedPrimaryFireDate: Date? { BackupAlarmStateStore.load()?.primaryFireDate }
     var trackedRampMinutesOverride: Int? { BackupAlarmStateStore.load()?.rampMinutesOverride }
 
-    func prepareBackupAlarm(after primaryFireDate: Date, rampMinutesOverride: Int? = nil) {
-        schedule(primaryFireDate: primaryFireDate, rampMinutesOverride: rampMinutesOverride, requestAuthorizationIfNeeded: true)
+    func prepareBackupAlarm(for alarm: Alarm, after primaryFireDate: Date, rampMinutesOverride: Int? = nil) {
+        schedule(alarm: alarm, primaryFireDate: primaryFireDate, rampMinutesOverride: rampMinutesOverride, requestAuthorizationIfNeeded: true)
     }
 
-    func scheduleBackupIfAuthorized(after primaryFireDate: Date, rampMinutesOverride: Int? = nil) {
-        schedule(primaryFireDate: primaryFireDate, rampMinutesOverride: rampMinutesOverride, requestAuthorizationIfNeeded: false)
+    func scheduleBackupIfAuthorized(for alarm: Alarm, after primaryFireDate: Date, rampMinutesOverride: Int? = nil) {
+        schedule(alarm: alarm, primaryFireDate: primaryFireDate, rampMinutesOverride: rampMinutesOverride, requestAuthorizationIfNeeded: false)
     }
 
     func cancelBackup() {
@@ -61,8 +63,11 @@ final class BackupAlarmManager {
 
         guard let state = BackupAlarmStateStore.load() else { return }
 
+        let alarmIDs = [state.alarmID, state.nudgeAlarmID].compactMap { $0 }
         do {
-            try alarmManager.cancel(id: state.alarmID)
+            for alarmID in alarmIDs {
+                try alarmManager.cancel(id: alarmID)
+            }
         } catch {
             print("BackupAlarmManager: failed to cancel backup alarm: \(error.localizedDescription)")
         }
@@ -76,7 +81,7 @@ final class BackupAlarmManager {
     func currentPrimaryFireDate(for alarmIDString: String) -> Date? {
         guard let alarmID = UUID(uuidString: alarmIDString),
               let state = BackupAlarmStateStore.load(),
-              state.alarmID == alarmID else {
+              state.alarmID == alarmID || state.nudgeAlarmID == alarmID else {
             return nil
         }
 
@@ -101,11 +106,13 @@ final class BackupAlarmManager {
         AlarmOccurrenceScheduler.snoozeCurrentOccurrence(using: Alarm.load())
     }
 
-    private func schedule(primaryFireDate: Date, rampMinutesOverride: Int?, requestAuthorizationIfNeeded: Bool) {
+    private func schedule(alarm: Alarm, primaryFireDate: Date, rampMinutesOverride: Int?, requestAuthorizationIfNeeded: Bool) {
         let backupFireDate = primaryFireDate.addingTimeInterval(Self.systemAlarmOffset)
+        let nudgeFireDate = alarm.nudgeFireDate(for: primaryFireDate)
 
         if let state = BackupAlarmStateStore.load(),
            state.backupFireDate == backupFireDate,
+           state.nudgeFireDate == nudgeFireDate,
            state.rampMinutesOverride == rampMinutesOverride {
             recordScheduleOutcome("already_scheduled")
             return
@@ -114,15 +121,24 @@ final class BackupAlarmManager {
         scheduleTask?.cancel()
         scheduleTask = Task { [weak self] in
             await self?.performSchedule(
+                alarm: alarm,
                 primaryFireDate: primaryFireDate,
                 backupFireDate: backupFireDate,
+                nudgeFireDate: nudgeFireDate,
                 rampMinutesOverride: rampMinutesOverride,
                 requestAuthorizationIfNeeded: requestAuthorizationIfNeeded
             )
         }
     }
 
-    private func performSchedule(primaryFireDate: Date, backupFireDate: Date, rampMinutesOverride: Int?, requestAuthorizationIfNeeded: Bool) async {
+    private func performSchedule(
+        alarm: Alarm,
+        primaryFireDate: Date,
+        backupFireDate: Date,
+        nudgeFireDate: Date?,
+        rampMinutesOverride: Int?,
+        requestAuthorizationIfNeeded: Bool
+    ) async {
         guard backupFireDate > Date() else {
             recordScheduleOutcome("backup_fire_date_in_past")
             return
@@ -156,7 +172,7 @@ final class BackupAlarmManager {
         let alarmID = UUID()
         let configuration = AlarmManager.AlarmConfiguration.alarm(
             schedule: .fixed(backupFireDate),
-            attributes: makeAttributes(),
+            attributes: makeAttributes(title: "Wake up"),
             stopIntent: StopBackupAlarmIntent(alarmID: alarmID.uuidString),
             secondaryIntent: SnoozeBackupAlarmIntent(alarmID: alarmID.uuidString),
             sound: .default
@@ -166,23 +182,55 @@ final class BackupAlarmManager {
             _ = try await alarmManager.schedule(id: alarmID, configuration: configuration)
             guard !Task.isCancelled else { return }
 
+            let nudgeAlarmID = await scheduleNudgeIfNeeded(
+                for: alarm,
+                nudgeFireDate: nudgeFireDate
+            )
+            guard !Task.isCancelled else { return }
+
             BackupAlarmStateStore.save(
                 BackupAlarmState(
                     alarmID: alarmID,
                     primaryFireDate: primaryFireDate,
                     backupFireDate: backupFireDate,
-                    rampMinutesOverride: rampMinutesOverride
+                    rampMinutesOverride: rampMinutesOverride,
+                    nudgeAlarmID: nudgeAlarmID,
+                    nudgeFireDate: nudgeFireDate
                 )
             )
             _ = AlarmDiagnosticsStore.update { diagnostics in
                 diagnostics.lastBackupScheduledAt = Date()
                 diagnostics.lastBackupFireDate = backupFireDate
                 diagnostics.lastFireDate = primaryFireDate
-                diagnostics.lastBackupScheduleOutcome = "scheduled"
+                diagnostics.lastBackupScheduleOutcome = alarm.nudgeEnabled && nudgeAlarmID == nil ? "scheduled_without_nudge" : "scheduled"
             }
         } catch {
             print("BackupAlarmManager: failed to schedule backup alarm: \(error.localizedDescription)")
             recordScheduleOutcome("schedule_failed")
+        }
+    }
+
+    private func scheduleNudgeIfNeeded(for alarm: Alarm, nudgeFireDate: Date?) async -> UUID? {
+        guard alarm.nudgeEnabled, let nudgeFireDate, nudgeFireDate > Date() else {
+            return nil
+        }
+
+        let nudgeAlarmID = UUID()
+        let configuration = AlarmManager.AlarmConfiguration.alarm(
+            schedule: .fixed(nudgeFireDate),
+            attributes: makeAttributes(title: "Nudge alarm"),
+            stopIntent: StopBackupAlarmIntent(alarmID: nudgeAlarmID.uuidString),
+            secondaryIntent: SnoozeBackupAlarmIntent(alarmID: nudgeAlarmID.uuidString),
+            sound: .default
+        )
+
+        do {
+            _ = try await alarmManager.schedule(id: nudgeAlarmID, configuration: configuration)
+            return nudgeAlarmID
+        } catch {
+            print("BackupAlarmManager: failed to schedule nudge alarm: \(error.localizedDescription)")
+            recordScheduleOutcome("nudge_schedule_failed")
+            return nil
         }
     }
 
@@ -200,10 +248,10 @@ final class BackupAlarmManager {
         }
     }
 
-    private func makeAttributes() -> AlarmAttributes<BackupAlarmMetadata> {
+    private func makeAttributes(title: LocalizedStringResource) -> AlarmAttributes<BackupAlarmMetadata> {
         let presentation = AlarmPresentation(
             alert: AlarmPresentation.Alert(
-                title: "Wake up",
+                title: title,
                 secondaryButton: AlarmButton(
                     text: "Snooze",
                     textColor: .blue,

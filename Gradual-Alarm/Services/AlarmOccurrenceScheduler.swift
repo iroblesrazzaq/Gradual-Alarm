@@ -2,11 +2,11 @@ import Foundation
 
 @MainActor
 enum AlarmOccurrenceScheduler {
-    static let snoozeDuration: TimeInterval = 10 * 60
+    nonisolated static let snoozeDuration: TimeInterval = 10 * 60
 
     static func activateOccurrence(for alarm: Alarm, fireDate: Date, rampMinutesOverride: Int? = nil) {
         AudioRampPlayer.shared.arm(for: armedAlarm(from: alarm, rampMinutesOverride: rampMinutesOverride), fireDate: fireDate)
-        BackupAlarmManager.shared.prepareBackupAlarm(after: fireDate, rampMinutesOverride: rampMinutesOverride)
+        BackupAlarmManager.shared.prepareBackupAlarm(for: alarm, after: fireDate, rampMinutesOverride: rampMinutesOverride)
         NotificationManager.shared.prepareFallbackNotification(for: alarm, fireDate: fireDate)
     }
 
@@ -42,6 +42,29 @@ enum AlarmOccurrenceScheduler {
         NotificationManager.shared.cancelAlarmNotification()
         BackupAlarmManager.shared.cancelBackup()
         AudioRampPlayer.shared.stop()
+    }
+
+    static func skipNextOccurrence(using alarm: Alarm) -> Alarm {
+        var updatedAlarm = alarm.clearingExpiredSkip()
+        let skippedFireDate = updatedAlarm.nextFireDate
+        updatedAlarm.skippedFireDate = skippedFireDate
+        updatedAlarm.save()
+
+        reschedule(using: updatedAlarm, after: Date())
+        _ = AlarmDiagnosticsStore.update { diagnostics in
+            diagnostics.lastStopAt = Date()
+            diagnostics.lastFireDate = updatedAlarm.nextFireDate
+        }
+
+        return updatedAlarm
+    }
+
+    static func clearSkippedOccurrence(using alarm: Alarm) -> Alarm {
+        var updatedAlarm = alarm
+        updatedAlarm.skippedFireDate = nil
+        updatedAlarm.save()
+        reschedule(using: updatedAlarm, after: Date())
+        return updatedAlarm
     }
 
     private static func armedAlarm(from alarm: Alarm, rampMinutesOverride: Int?) -> Alarm {

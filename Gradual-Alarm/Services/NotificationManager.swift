@@ -3,6 +3,7 @@ import UserNotifications
 final class NotificationManager: NSObject, UNUserNotificationCenterDelegate {
     static let shared = NotificationManager()
     private let alarmIdentifier = "gradualwake.alarm"
+    private let nudgeIdentifier = "gradualwake.nudge"
 
     override init() {
         super.init()
@@ -46,26 +47,26 @@ final class NotificationManager: NSObject, UNUserNotificationCenterDelegate {
     }
 
     func scheduleAlarmNotification(for alarm: Alarm, fireDate: Date? = nil) {
-        let interval = (fireDate ?? alarm.nextFireDate).timeIntervalSinceNow
-        guard interval > 0 else { return }
+        let fireDate = fireDate ?? alarm.nextFireDate
+        scheduleNotification(
+            identifier: alarmIdentifier,
+            title: "Wake up",
+            body: "Your alarm is ringing",
+            fireDate: fireDate
+        )
 
-        let content = UNMutableNotificationContent()
-        content.title = "Wake up"
-        content.body = "Your alarm is ringing"
-        content.sound = .default
-
-        let trigger = UNTimeIntervalNotificationTrigger(timeInterval: interval, repeats: false)
-        let request = UNNotificationRequest(identifier: alarmIdentifier, content: content, trigger: trigger)
-
-        UNUserNotificationCenter.current().add(request) { error in
-            if let error {
-                print("NotificationManager: failed to schedule fallback notification: \(error.localizedDescription)")
-            }
+        if let nudgeFireDate = alarm.nudgeFireDate(for: fireDate) {
+            scheduleNotification(
+                identifier: nudgeIdentifier,
+                title: "Nudge alarm",
+                body: "Your alarm is still ringing",
+                fireDate: nudgeFireDate
+            )
         }
     }
 
     func cancelAlarmNotification() {
-        UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: [alarmIdentifier])
+        UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: [alarmIdentifier, nudgeIdentifier])
     }
 
     // Play banner + sound even when the app is frontmost
@@ -75,5 +76,24 @@ final class NotificationManager: NSObject, UNUserNotificationCenterDelegate {
         withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void
     ) {
         completionHandler([.banner, .sound, .list])
+    }
+
+    private func scheduleNotification(identifier: String, title: String, body: String, fireDate: Date) {
+        let interval = fireDate.timeIntervalSinceNow
+        guard interval > 0 else { return }
+
+        let content = UNMutableNotificationContent()
+        content.title = title
+        content.body = body
+        content.sound = .default
+
+        let trigger = UNTimeIntervalNotificationTrigger(timeInterval: interval, repeats: false)
+        let request = UNNotificationRequest(identifier: identifier, content: content, trigger: trigger)
+
+        UNUserNotificationCenter.current().add(request) { error in
+            if let error {
+                print("NotificationManager: failed to schedule fallback notification: \(error.localizedDescription)")
+            }
+        }
     }
 }

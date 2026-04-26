@@ -5,6 +5,7 @@ enum AlarmPlaybackPhase: String {
     case idle
     case silentHold
     case ramping
+    case alerting
 }
 
 @MainActor
@@ -24,6 +25,9 @@ final class AudioRampPlayer: NSObject {
     private var armedRampStartDate: Date?
     private var playbackPhase: AlarmPlaybackPhase = .idle
     private var isInterrupted = false
+    private var armedSound: AlarmSound = .oceanWaves
+    private var armedPeakVolume: Float = 1
+    private var armedRampCurve: AlarmRampCurve = .linear
 
     private override init() {
         super.init()
@@ -33,8 +37,8 @@ final class AudioRampPlayer: NSObject {
     func arm(for alarm: Alarm, fireDate: Date? = nil) {
         stop(deactivateSession: false)
 
-        guard let audioURL = Bundle.main.url(forResource: "ocean-waves", withExtension: "wav") else {
-            print("AudioRampPlayer: missing bundled ocean-waves.wav resource")
+        guard let audioURL = audioURL(for: alarm.sound) else {
+            print("AudioRampPlayer: missing bundled audio resource")
             recordRecoveryOutcome("missing_audio_resource")
             return
         }
@@ -53,6 +57,9 @@ final class AudioRampPlayer: NSObject {
             self.armedFireDate = fireDate
             self.armedRampStartDate = rampStartDate
             self.isInterrupted = false
+            self.armedSound = alarm.sound
+            self.armedPeakVolume = alarm.peakVolume
+            self.armedRampCurve = alarm.rampCurve
 
             _ = AlarmDiagnosticsStore.update { diagnostics in
                 diagnostics.lastArmedAt = Date()
@@ -118,8 +125,7 @@ final class AudioRampPlayer: NSObject {
             diagnostics.lastRecoveryAttemptAt = Date()
         }
 
-        let previousPhase = playbackPhase
-        guard let audioURL = Bundle.main.url(forResource: "ocean-waves", withExtension: "wav") else {
+        guard let audioURL = audioURL(for: armedSound) else {
             recordRecoveryOutcome("reset_missing_audio_resource")
             return
         }
@@ -129,7 +135,7 @@ final class AudioRampPlayer: NSObject {
 
             let replacementPlayer = try AVAudioPlayer(contentsOf: audioURL)
             replacementPlayer.numberOfLoops = -1
-            replacementPlayer.volume = previousPhase == .ramping ? currentVolume(for: Date()) : 0
+            replacementPlayer.volume = currentVolume(for: Date())
             replacementPlayer.prepareToPlay()
 
             player?.stop()
@@ -164,6 +170,9 @@ final class AudioRampPlayer: NSObject {
         armedFireDate = nil
         armedRampStartDate = nil
         isInterrupted = false
+        armedPeakVolume = 1
+        armedRampCurve = .linear
+        armedSound = .oceanWaves
         updatePhase(.idle)
 
         guard deactivateSession else { return }
@@ -198,6 +207,8 @@ final class AudioRampPlayer: NSObject {
         player.volume = currentVolume(for: Date())
 
         if elapsed >= total {
+            player.volume = armedPeakVolume
+            updatePhase(.alerting)
             rampTimer?.invalidate()
             rampTimer = nil
         }
@@ -216,7 +227,11 @@ final class AudioRampPlayer: NSObject {
 
         rampStartTimer?.invalidate()
         rampStartTimer = nil
-        updatePhase(.ramping)
+        if Date() >= (armedFireDate ?? Date.distantFuture) {
+            updatePhase(.alerting)
+        } else {
+            updatePhase(.ramping)
+        }
         _ = AlarmDiagnosticsStore.update { diagnostics in
             diagnostics.lastRampStartedAt = Date()
             diagnostics.lastFireDate = armedFireDate
@@ -258,7 +273,14 @@ final class AudioRampPlayer: NSObject {
         let total = fireDate.timeIntervalSince(rampStartDate)
         guard total > 0 else { return 1 }
         let progress = min(max(elapsed / total, 0), 1)
-        return Float(progress)
+        return Float(armedRampCurve.apply(to: progress)) * armedPeakVolume
+    }
+
+    private func audioURL(for sound: AlarmSound) -> URL? {
+        if let selectedURL = Bundle.main.url(forResource: sound.resourceName, withExtension: "wav") {
+            return selectedURL
+        }
+        return Bundle.main.url(forResource: AlarmSound.oceanWaves.resourceName, withExtension: "wav")
     }
 
     private func updatePhase(_ phase: AlarmPlaybackPhase) {
