@@ -48,6 +48,7 @@ final class BackupAlarmManager {
     var trackedBackupFireDate: Date? { BackupAlarmStateStore.load()?.backupFireDate }
     var trackedPrimaryFireDate: Date? { BackupAlarmStateStore.load()?.primaryFireDate }
     var trackedRampMinutesOverride: Int? { BackupAlarmStateStore.load()?.rampMinutesOverride }
+    var authorizationState: AlarmManager.AuthorizationState { alarmManager.authorizationState }
 
     func prepareBackupAlarm(for alarm: Alarm, after primaryFireDate: Date, rampMinutesOverride: Int? = nil) {
         schedule(alarm: alarm, primaryFireDate: primaryFireDate, rampMinutesOverride: rampMinutesOverride, requestAuthorizationIfNeeded: true)

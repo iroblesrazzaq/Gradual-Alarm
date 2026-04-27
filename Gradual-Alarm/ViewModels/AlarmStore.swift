@@ -1,7 +1,27 @@
 import AVFoundation
+import AlarmKit
 import Foundation
 import Combine
 import SwiftUI
+import UserNotifications
+
+#if canImport(UIKit)
+import UIKit
+#endif
+
+enum ReliabilityStatusKind {
+    case ready
+    case warning
+    case actionNeeded
+    case unknown
+}
+
+struct ReliabilityStatus {
+    var title: String
+    var detail: String
+    var kind: ReliabilityStatusKind
+    var canOpenSettings: Bool = false
+}
 
 @MainActor
 final class AlarmStore: ObservableObject {
@@ -11,6 +31,21 @@ final class AlarmStore: ObservableObject {
     @Published var systemAlarmWarningVisible = false
     @Published var audioRouteWarningText: String?
     @Published var diagnostics = AlarmDiagnosticsStore.load()
+    @Published var notificationStatus = ReliabilityStatus(
+        title: "Fallback notification",
+        detail: "Checking permission...",
+        kind: .unknown
+    )
+    @Published var backupAlarmStatus = ReliabilityStatus(
+        title: "System backup",
+        detail: "Checking permission...",
+        kind: .unknown
+    )
+    @Published var gradualAudioStatus = ReliabilityStatus(
+        title: "Gradual audio",
+        detail: "Checking audio...",
+        kind: .unknown
+    )
 
     private var environmentTimer: Timer?
     private let lowVolumeThreshold: Float = 0.25
@@ -57,6 +92,7 @@ final class AlarmStore: ObservableObject {
             AlarmOccurrenceScheduler.reschedule(using: alarm, after: Date())
         }
         syncFromAudioState()
+        refreshReliabilityState()
     }
 
     func updateTime(hour: Int, minute: Int) {
@@ -148,10 +184,12 @@ final class AlarmStore: ObservableObject {
             AudioRampPlayer.shared.syncForCurrentTime()
             updateEnvironmentWarnings()
             syncFromAudioState()
+            refreshReliabilityState()
         @unknown default:
             AudioRampPlayer.shared.syncForCurrentTime()
             updateEnvironmentWarnings()
             syncFromAudioState()
+            refreshReliabilityState()
         }
     }
 
@@ -166,6 +204,14 @@ final class AlarmStore: ObservableObject {
                 fireDate: AudioRampPlayer.shared.currentFireDate
             )
         }
+        refreshReliabilityState()
+    }
+
+    func openAppSettings() {
+        #if canImport(UIKit)
+        guard let url = URL(string: UIApplication.openSettingsURLString) else { return }
+        UIApplication.shared.open(url)
+        #endif
     }
 
     // MARK: - Private
@@ -191,12 +237,132 @@ final class AlarmStore: ObservableObject {
         updateEnvironmentWarnings()
 
         let timer = Timer(timeInterval: 5, repeats: true) { [weak self] _ in
+            guard let self else { return }
             Task { @MainActor in
-                self?.updateEnvironmentWarnings()
+                self.updateEnvironmentWarnings()
+                self.refreshReliabilityState()
             }
         }
         environmentTimer = timer
         RunLoop.main.add(timer, forMode: .common)
+    }
+
+    private func refreshReliabilityState() {
+        updateGradualAudioStatus()
+        updateBackupAlarmStatus()
+        updateNotificationStatus()
+    }
+
+    private func updateGradualAudioStatus() {
+        guard AudioRampPlayer.shared.isArmed else {
+            gradualAudioStatus = ReliabilityStatus(
+                title: "Gradual audio",
+                detail: "Not armed yet",
+                kind: .warning
+            )
+            return
+        }
+
+        switch AudioRampPlayer.shared.currentPhase {
+        case .silentHold:
+            gradualAudioStatus = ReliabilityStatus(
+                title: "Gradual audio",
+                detail: "Armed; ramp starts at \(formatTime(alarm.rampStartDate(for: activeFireDate)))",
+                kind: .ready
+            )
+        case .ramping:
+            gradualAudioStatus = ReliabilityStatus(
+                title: "Gradual audio",
+                detail: "Ramping now",
+                kind: .ready
+            )
+        case .alerting:
+            gradualAudioStatus = ReliabilityStatus(
+                title: "Gradual audio",
+                detail: "Alarm is ringing",
+                kind: .ready
+            )
+        case .idle:
+            gradualAudioStatus = ReliabilityStatus(
+                title: "Gradual audio",
+                detail: "Not armed yet",
+                kind: .warning
+            )
+        }
+    }
+
+    private func updateBackupAlarmStatus() {
+        switch BackupAlarmManager.shared.authorizationState {
+        case .authorized:
+            if let backupFireDate = BackupAlarmManager.shared.trackedBackupFireDate,
+               backupFireDate > Date(),
+               Calendar.current.isDate(backupFireDate, equalTo: activeFireDate, toGranularity: .minute) {
+                backupAlarmStatus = ReliabilityStatus(
+                    title: "System backup",
+                    detail: "Ready for \(formatTime(backupFireDate))",
+                    kind: .ready
+                )
+            } else {
+                backupAlarmStatus = ReliabilityStatus(
+                    title: "System backup",
+                    detail: "Authorized but not scheduled yet",
+                    kind: .warning
+                )
+            }
+        case .notDetermined:
+            backupAlarmStatus = ReliabilityStatus(
+                title: "System backup",
+                detail: "Permission needed",
+                kind: .actionNeeded
+            )
+        case .denied:
+            backupAlarmStatus = ReliabilityStatus(
+                title: "System backup",
+                detail: "Permission denied",
+                kind: .actionNeeded,
+                canOpenSettings: true
+            )
+        @unknown default:
+            backupAlarmStatus = ReliabilityStatus(
+                title: "System backup",
+                detail: "Unavailable on this device",
+                kind: .actionNeeded
+            )
+        }
+    }
+
+    private func updateNotificationStatus() {
+        NotificationManager.shared.checkPermissionStatus { [weak self] status in
+            guard let self else { return }
+
+            switch status {
+            case .authorized, .provisional, .ephemeral:
+                self.notificationStatus = ReliabilityStatus(
+                    title: "Fallback notification",
+                    detail: "Ready",
+                    kind: .ready
+                )
+            case .notDetermined:
+                self.notificationStatus = ReliabilityStatus(
+                    title: "Fallback notification",
+                    detail: "Permission needed",
+                    kind: .actionNeeded
+                )
+            case .denied:
+                self.notificationStatus = ReliabilityStatus(
+                    title: "Fallback notification",
+                    detail: "Permission denied",
+                    kind: .actionNeeded,
+                    canOpenSettings: true
+                )
+            @unknown default:
+                self.notificationStatus = ReliabilityStatus(
+                    title: "Fallback notification",
+                    detail: "Permission unavailable",
+                    kind: .actionNeeded
+                )
+            }
+        }
     }
 
     private func updateEnvironmentWarnings() {
@@ -223,7 +389,7 @@ final class AlarmStore: ObservableObject {
             return "Audio is routed to \(output.portName). Use the iPhone speaker for the most reliable alarm."
         }
 
-        if let output = outputs.first(where: { $0.portType == .builtInReceiver }) {
+        if outputs.contains(where: { $0.portType == .builtInReceiver }) {
             return "Audio is routed to the phone receiver. Switch to speaker output before sleep."
         }
 
@@ -243,5 +409,16 @@ final class AlarmStore: ObservableObject {
         ]
 
         return degradedOutcomes.contains(outcome)
+    }
+
+    private var activeFireDate: Date {
+        AudioRampPlayer.shared.currentFireDate ?? alarm.nextFireDate
+    }
+
+    private func formatTime(_ date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.dateStyle = .none
+        formatter.timeStyle = .short
+        return formatter.string(from: date)
     }
 }

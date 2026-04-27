@@ -18,6 +18,14 @@ struct MainView: View {
     var body: some View {
         NavigationStack {
             VStack(spacing: 0) {
+                if store.backupAlarmStatus.kind == .actionNeeded {
+                    reliabilityBanner(for: store.backupAlarmStatus)
+                }
+
+                if store.notificationStatus.kind == .actionNeeded {
+                    reliabilityBanner(for: store.notificationStatus)
+                }
+
                 if store.volumeWarningVisible {
                     HStack {
                         Image(systemName: "speaker.slash.fill")
@@ -55,6 +63,36 @@ struct MainView: View {
                 }
 
                 List {
+                    Section {
+                        ReadinessRow(status: store.gradualAudioStatus)
+                        ReadinessRow(status: store.backupAlarmStatus)
+                        ReadinessRow(status: store.notificationStatus)
+                        ReadinessRow(status: routeStatus)
+                        ReadinessRow(status: volumeStatus)
+
+                        if store.alarm.nudgeEnabled, let nudgeFireDate = store.alarm.nudgeFireDate {
+                            ReadinessRow(
+                                status: ReliabilityStatus(
+                                    title: "Nudge alarm",
+                                    detail: "Ready for \(format(nudgeFireDate, dateStyle: .none, timeStyle: .short))",
+                                    kind: .ready
+                                )
+                            )
+                        }
+
+                        if store.backupAlarmStatus.canOpenSettings || store.notificationStatus.canOpenSettings {
+                            Button {
+                                store.openAppSettings()
+                            } label: {
+                                Label("Open Settings", systemImage: "gear")
+                            }
+                        }
+                    } header: {
+                        Text("Sleep readiness")
+                    } footer: {
+                        Text("Check this before sleep. Gradual audio is the primary wake path; the system backup and notification are safety nets.")
+                    }
+
                     Section {
                         Button {
                             showTimePicker = true
@@ -218,6 +256,30 @@ struct MainView: View {
         format(store.alarm.nextFireDate, dateStyle: .medium, timeStyle: .short)
     }
 
+    private var routeStatus: ReliabilityStatus {
+        if let audioRouteWarningText = store.audioRouteWarningText {
+            return ReliabilityStatus(
+                title: "Audio route",
+                detail: audioRouteWarningText,
+                kind: .warning
+            )
+        }
+
+        return ReliabilityStatus(
+            title: "Audio route",
+            detail: "iPhone output looks ready",
+            kind: .ready
+        )
+    }
+
+    private var volumeStatus: ReliabilityStatus {
+        ReliabilityStatus(
+            title: "Volume",
+            detail: store.volumeWarningVisible ? "Low volume may be quiet" : "Volume looks ready",
+            kind: store.volumeWarningVisible ? .warning : .ready
+        )
+    }
+
     private var soundBinding: Binding<AlarmSound> {
         Binding(
             get: { store.alarm.sound },
@@ -286,5 +348,72 @@ struct MainView: View {
         formatter.dateStyle = dateStyle
         formatter.timeStyle = timeStyle
         return formatter.string(from: date)
+    }
+
+    @ViewBuilder
+    private func reliabilityBanner(for status: ReliabilityStatus) -> some View {
+        HStack(alignment: .top, spacing: 8) {
+            Image(systemName: "exclamationmark.triangle.fill")
+            Text("\(status.title): \(status.detail)")
+                .font(.footnote)
+            Spacer(minLength: 0)
+            if status.canOpenSettings {
+                Button("Settings") {
+                    store.openAppSettings()
+                }
+                .font(.footnote.weight(.semibold))
+            }
+        }
+        .padding(10)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Color.orange.opacity(0.9))
+        .foregroundStyle(.black)
+    }
+}
+
+private struct ReadinessRow: View {
+    let status: ReliabilityStatus
+
+    var body: some View {
+        HStack(alignment: .top, spacing: 10) {
+            Image(systemName: iconName)
+                .foregroundStyle(iconColor)
+                .frame(width: 20)
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(status.title)
+                    .foregroundStyle(.primary)
+                Text(status.detail)
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+    }
+
+    private var iconName: String {
+        switch status.kind {
+        case .ready:
+            return "checkmark.circle.fill"
+        case .warning:
+            return "exclamationmark.triangle.fill"
+        case .actionNeeded:
+            return "xmark.octagon.fill"
+        case .unknown:
+            return "questionmark.circle.fill"
+        }
+    }
+
+    private var iconColor: Color {
+        switch status.kind {
+        case .ready:
+            return .green
+        case .warning:
+            return .yellow
+        case .actionNeeded:
+            return .red
+        case .unknown:
+            return .secondary
+        }
     }
 }
